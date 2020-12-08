@@ -1,5 +1,86 @@
 # Changelog
 
+## 1.8.0 (2020-12-03)
+
+### Enhancements
+
+* Support unwrapping the underlying causes from an error, including attached
+  stack trace contents if available.
+
+  Any reported error which implements the following interface:
+
+  ```go
+  type errorWithCause interface {
+    Unwrap() error
+  }
+  ```
+
+  will have the cause included as a previous error in the resulting event. The
+  cause information will be available on the Bugsnag dashboard and is available
+  for inspection in callbacks on the `errors.Error` object.
+
+  ```go
+  bugsnag.OnBeforeNotify(func(event *bugsnag.Event, config *bugsnag.Configuration) error {
+    if event.Error.Cause != nil {
+      fmt.Printf("This error was caused by %v", event.Error.Cause.Error())
+    }
+    return nil
+  })
+  ```
+
+## 1.7.0 (2020-11-18)
+
+### Enhancements
+
+* Support for changing the handled-ness of an event prior to delivery. This
+  allows for otherwise handled events to affect a project's stability score.
+
+  ```go
+  bugsnag.Notify(err, func(event *bugsnag.Event) {
+    event.Unhandled = true
+  })
+  ```
+
+## 1.6.0 (2020-11-12)
+
+### Enhancements
+
+* Extract stacktrace contents on errors wrapped by
+  [`pkg/errors`](https://github.com/pkg/errors).
+  [#144](https://github.com/bugsnag/bugsnag-go/pull/144)
+* Support modifying an individual event using a callback function argument.
+
+  ```go
+  bugsnag.Notify(err, func(event *bugsnag.Event) {
+    event.ErrorClass = "Unexpected Termination"
+    event.MetaData.Update(loadJobData())
+
+    if event.Stacktrace[0].File = "mylogger.go" {
+      event.Stacktrace = event.Stacktrace[1:]
+    }
+  })
+  ```
+
+  The stack trace of an event is now mutable so frames can be removed or
+  modified.
+  [#146](https://github.com/bugsnag/bugsnag-go/pull/146)
+
+### Bug fixes
+
+* Send web framework name with severity reason if set. Previously this value was
+  ignored, obscuring the severity reason for failed web requests captured by
+  bugsnag middleware.
+  [#143](https://github.com/bugsnag/bugsnag-go/pull/143)
+
+## 1.5.4 (2020-10-28)
+
+### Bug fixes
+
+* Account for inlined frames when unwinding stack traces by using
+  `runtime.CallersFrames`.
+  [#114](https://github.com/bugsnag/bugsnag-go/pull/114)
+  [#140](https://github.com/bugsnag/bugsnag-go/pull/140)
+
 ## 1.5.3 (2019-07-11)
 
 This release adds runtime version data to the report and session payloads, which will show up under the Device tab in the Bugsnag dashboard.

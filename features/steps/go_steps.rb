@@ -1,9 +1,5 @@
 require 'net/http'
 
-When(/^I wait for the app to open port "(.*)"$/) do |port|
-  wait_for_port(port)
-end
-
 Then(/^the request(?: (\d+))? is a valid error report with api key "(.*)"$/) do |request_index, api_key|
   request_index ||= 0
   steps %Q{
@@ -63,4 +59,13 @@ Then(/^I wait to receive (\d+) requests after the start up session?$/) do |reque
   # Wait an extra second to ensure there are no further requests
   sleep 1
   assert_equal(request_count, stored_requests.size, "#{stored_requests.size} requests received")
+end
+
+Then("stack frame {int} contains a local function spanning {int} to {int}") do |frame, val, old_val|
+  # Old versions of Go put the line number on the end of the function
+  if ['1.7', '1.8'].include? ENV['GO_VERSION']
+    step "the \"lineNumber\" of stack frame #{frame} equals #{old_val}"
+  else
+    step "the \"lineNumber\" of stack frame #{frame} equals #{val}"
+  end
 end
